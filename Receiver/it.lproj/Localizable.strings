@@ -1,0 +1,13 @@
+/* iMacDisplay Receiver (iMac) — traduzione italiana. Le chiavi sono il testo inglese. */
+
+"Starting…" = "Avvio…";
+"Waiting for your Mac" = "In attesa del tuo Mac";
+"Open iMacDisplay on your Mac and choose “%@”." = "Apri iMacDisplay sul tuo Mac e scegli “%@”.";
+"Pairing code" = "Codice di abbinamento";
+"Enter this code on “%@”." = "Inserisci questo codice su “%@”.";
+"Something went wrong" = "Qualcosa è andato storto";
+"While connected, ⌃⌥⌘⌫ gives keyboard and mouse back to the iMac." = "Durante la connessione, ⌃⌥⌘⌫ restituisce tastiera e mouse all'iMac.";
+"About iMacDisplay Receiver" = "Informazioni su iMacDisplay Receiver";
+"Open at Login" = "Apri al login";
+"Forget Paired Macs" = "Dimentica i Mac abbinati";
+"Quit iMacDisplay Receiver" = "Esci da iMacDisplay Receiver";
