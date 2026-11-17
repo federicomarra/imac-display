@@ -1,0 +1,3 @@
+/* Testi dei permessi di sistema */
+"NSAudioCaptureUsageDescription" = "iMacDisplay riproduce l'audio del Mac sugli altoparlanti dell'iMac.";
+"NSLocalNetworkUsageDescription" = "iMacDisplay trova il tuo iMac sulla rete locale e gli invia lo schermo.";

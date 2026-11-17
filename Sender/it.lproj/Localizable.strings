@@ -1,0 +1,73 @@
+/* iMacDisplay (Mac) — traduzione italiana. Le chiavi sono il testo inglese. */
+
+/* Menu */
+"To use the iMac's keyboard and mouse, allow iMacDisplay in Accessibility." = "Per usare tastiera e mouse dell'iMac, consenti iMacDisplay in Accessibilità.";
+"Open Accessibility Settings" = "Apri le impostazioni di Accessibilità";
+"Disconnect" = "Disconnetti";
+"Settings…" = "Impostazioni…";
+"Quit" = "Esci";
+"Not connected" = "Non connesso";
+"Connecting to %@…" = "Connessione a %@…";
+"Pairing with %@" = "Abbinamento con %@";
+"Connected to %@" = "Connesso a %@";
+"iMacs on the network" = "iMac sulla rete";
+"Searching… Open iMacDisplay Receiver on the iMac." = "Ricerca in corso… Apri iMacDisplay Receiver sull'iMac.";
+"Enter the code shown on %@." = "Inserisci il codice mostrato su %@.";
+"Code" = "Codice";
+"Pair" = "Abbina";
+"Audio on the iMac" = "Audio sull'iMac";
+"No audio" = "Nessun audio";
+"iMac screen" = "Schermo dell'iMac";
+"Brightness" = "Luminosità";
+"Gamma" = "Gamma";
+"Warmth" = "Temperatura colore";
+"Reset Colors" = "Ripristina colori";
+"Thunderbolt cable" = "Cavo Thunderbolt";
+"Ethernet" = "Ethernet";
+"Wi-Fi" = "Wi-Fi";
+"Other network" = "Altra rete";
+"Network" = "Rete";
+
+/* Settings */
+"Display" = "Schermo";
+"Mode" = "Modalità";
+"Extend the desktop (separate screen)" = "Estendi la scrivania (schermo separato)";
+"Mirror the main screen" = "Duplica lo schermo principale";
+"Resolution" = "Risoluzione";
+"Retina – looks like 2048 × 1152" = "Retina – come 2048 × 1152";
+"More space – looks like 2304 × 1296" = "Più spazio – come 2304 × 1296";
+"Native 4096 × 2304 (1:1, very small text)" = "Nativa 4096 × 2304 (1:1, testo molto piccolo)";
+"In extend mode you can also change the resolution and arrangement in System Settings → Displays." = "In modalità estesa puoi cambiare risoluzione e disposizione anche da Impostazioni di Sistema → Monitor.";
+"Quality" = "Qualità";
+"When the connection can't keep up" = "Quando la connessione non regge";
+"Lower the frame rate (keeps text sharp)" = "Abbassa il frame rate (testo sempre nitido)";
+"Lower the resolution (keeps motion smooth)" = "Abbassa la risoluzione (movimento fluido)";
+"Compress more (keeps both, more artifacts)" = "Comprimi di più (mantiene entrambi, più artefatti)";
+"Maximum frame rate" = "Frame rate massimo";
+"Maximum bitrate: %lld Mbit/s" = "Bitrate massimo: %lld Mbit/s";
+"Wi-Fi usually manages 20–40 Mbit/s; Ethernet and Thunderbolt 60–100 Mbit/s." = "Il Wi-Fi di solito regge 20–40 Mbit/s; Ethernet e Thunderbolt 60–100 Mbit/s.";
+"Video codec" = "Codec video";
+"Automatic" = "Automatico";
+"Audio and input" = "Audio e input";
+"Play the Mac's sound on the iMac only" = "Riproduci l'audio del Mac solo sull'iMac";
+"Control the Mac with the iMac's keyboard and mouse" = "Controlla il Mac con tastiera e mouse dell'iMac";
+"iMacDisplay needs the Accessibility permission for this." = "Per questo iMacDisplay ha bisogno del permesso di Accessibilità.";
+"Open Settings" = "Apri Impostazioni";
+"Connection" = "Connessione";
+"Connect automatically to the last iMac" = "Connetti automaticamente all'ultimo iMac";
+"Open iMacDisplay at login" = "Apri iMacDisplay al login";
+"Forget Paired iMacs" = "Dimentica gli iMac abbinati";
+"Connections over a Thunderbolt cable, Ethernet or Wi-Fi are chosen automatically, fastest first." = "Cavo Thunderbolt, Ethernet o Wi-Fi vengono scelti automaticamente, prima il più veloce.";
+"Apply Changes Now" = "Applica ora le modifiche";
+"Changes to display, quality, audio and input apply to the next connection, or now with this button." = "Le modifiche a schermo, qualità, audio e input valgono dalla prossima connessione, oppure subito con questo pulsante.";
+
+/* Errors */
+"Could not reach the iMac." = "Impossibile raggiungere l'iMac.";
+"The iMac app is a different version. Install the same version on both computers." = "L'app sull'iMac è di una versione diversa. Installa la stessa versione su entrambi i computer.";
+"Wrong code. Check the code on the iMac and try again." = "Codice errato. Controlla il codice sull'iMac e riprova.";
+"The iMac closed the connection. Try pairing again." = "L'iMac ha chiuso la connessione. Riprova l'abbinamento.";
+"Connection lost. Reconnecting…" = "Connessione persa. Riconnessione…";
+"macOS did not allow creating the virtual screen." = "macOS non ha permesso di creare lo schermo virtuale.";
+"The screen to capture was not found. Check the Screen Recording permission in System Settings → Privacy & Security." = "Schermo da catturare non trovato. Controlla il permesso Registrazione schermo in Impostazioni di Sistema → Privacy e sicurezza.";
+"The hardware video encoder could not be started (error %d)." = "Impossibile avviare il codificatore video hardware (errore %d).";
+"System audio could not be captured (%@, error %d). Check “System Audio Recording” in System Settings → Privacy & Security." = "Impossibile catturare l'audio di sistema (%1$@, errore %2$d). Controlla “Registrazione audio di sistema” in Impostazioni di Sistema → Privacy e sicurezza.";
