@@ -44,9 +44,10 @@ ditto build/Release/iMacDisplay.app "dist/dmg/iMacDisplay.app"
 ditto "build/Release/iMacDisplay Receiver.app" "dist/dmg/iMacDisplay Receiver.app"
 ln -s /Applications dist/dmg/Applications
 volume="iMacDisplay${version:+ $version}"
-# macOS 26+ deprecates `hdiutil create` for `diskutil image`, which older systems
-# (like the macOS 15 Release runner) don't have.
-if diskutil image create from -h >/dev/null 2>&1; then
+# macOS 26+ deprecates `hdiutil create` for `diskutil image create from`. Older
+# systems lack it, or (like macOS 15) have it without --volumeName.
+diskutil_help=$(diskutil image create from --help 2>&1 || true)
+if [[ $diskutil_help == *--volumeName* ]]; then
   diskutil image create from --format UDZO --volumeName "$volume" dist/dmg dist/iMacDisplay.dmg
 else
   hdiutil create -volname "$volume" -srcfolder dist/dmg -ov -format UDZO dist/iMacDisplay.dmg
