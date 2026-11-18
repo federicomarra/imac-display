@@ -22,6 +22,8 @@ final class SenderController: ObservableObject {
     @Published private(set) var displayState: DisplayState?
     @Published private(set) var pairingError: String?
     @Published private(set) var accessibilityGranted = InputInjector.isTrusted(prompt: false)
+    @Published private(set) var audioOutputNeedsInstall = AudioOutputDevice.needsInstall
+    @Published private(set) var audioOutputError: String?
 
     let settings = SenderSettings.shared
 
@@ -44,6 +46,8 @@ final class SenderController: ObservableObject {
     }
 
     private init() {
+        // An iMac output left over from a previous run that didn't end cleanly.
+        AudioOutputDevice.publish(nil)
         browser.onChange = { [weak self] list in
             self?.receivers = list
             self?.autoConnectIfNeeded()
@@ -115,11 +119,6 @@ final class SenderController: ObservableObject {
         }
     }
 
-    /// Applies the resolution setting to the running stream without restarting it.
-    func applyResolution() {
-        session?.setResolution(settings.resolutionPreset)
-    }
-
     private func connected(_ nwConnection: NWConnection?, to receiver: DiscoveredReceiver) {
         guard target?.id == receiver.id, case .connecting = state else {
             nwConnection?.cancel()
@@ -151,7 +150,7 @@ final class SenderController: ObservableObject {
     /// Called on the network queue.
     private func received(_ type: MessageType, _ payload: Data) {
         switch type {
-        case .inputEvent, .pong, .requestKeyframe, .receiverStats:
+        case .inputEvent, .pong, .requestKeyframe, .receiverStats, .audioVolume:
             session?.handle(type, payload)
         default:
             DispatchQueue.main.async { self.handleControlMessage(type, payload) }
@@ -194,9 +193,7 @@ final class SenderController: ObservableObject {
 
     private func startSession(_ reply: HelloReply) {
         guard let connection, let target, session == nil else { return }
-        let config = StreamConfig(mode: settings.displayMode,
-                                  preset: settings.resolutionPreset,
-                                  policy: settings.qualityPolicy,
+        let config = StreamConfig(policy: settings.qualityPolicy,
                                   maxFrameRate: settings.maxFrameRate,
                                   maxBitrate: Int(settings.maxBitrateMbps * 1_000_000),
                                   codecPreference: settings.codec,
@@ -258,6 +255,8 @@ final class SenderController: ObservableObject {
         connection = nil
         reply = nil
         stats = StreamStats()
+        // Like unplugging the cable: the iMac leaves the Mac's audio outputs.
+        AudioOutputDevice.publish(nil)
     }
 
     private func scheduleRetry() {
@@ -322,6 +321,20 @@ final class SenderController: ObservableObject {
         }
         controlWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: work)
+    }
+
+    // MARK: - Audio output
+
+    /// Installs the audio driver that makes the iMac an audio output of the Mac.
+    /// macOS asks for an administrator password.
+    func installAudioOutput() {
+        NSApp.activate(ignoringOtherApps: true)
+        let error = AudioOutputDevice.install()
+        audioOutputNeedsInstall = AudioOutputDevice.needsInstall
+        audioOutputError = error?.isEmpty == false ? error : nil
+        guard error == nil else { return }
+        // Core Audio restarts to load the driver: restart the stream to use the new output.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in self?.restartStream() }
     }
 
     // MARK: - Misc

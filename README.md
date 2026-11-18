@@ -11,7 +11,7 @@ Retina iMacs never supported Target Display Mode, so no cable can make the Mac s
 
 ## Features
 
-- **Extend** the desktop (a new screen in System Settings → Displays) or **mirror** the main screen.
+- **Extends** the desktop like a monitor on HDMI: a new screen in System Settings → Displays, where you choose its resolution and arrangement (macOS remembers them).
 - Retina resolution by default (looks like 2048 × 1152, rendered at 4096 × 2304), up to 60 fps.
 - **Adaptive quality**: when the link can't keep up, iMacDisplay lowers the frame rate first (configurable: resolution or compression instead).
 - **Brightness, gamma and warmth** of the iMac screen controlled from the Mac's menu bar.
@@ -36,7 +36,7 @@ Both computers must be on the same network, or connected with a Thunderbolt cabl
 - **It is not a real monitor.** The iMac only shows the Mac while both apps are running: no boot screen, no login window, no FileVault unlock.
 - **The image is compressed.** Text is sharp on a cable or good Ethernet; on Wi-Fi expect artifacts or a lower frame rate.
 - **4K at 60 Hz is at the edge of what the iMac can decode.** Its processor (Broadwell) decodes H.264 in hardware but not HEVC, and 4096 × 2304 at 60 fps is beyond the official H.264 Level 5.2 limit (about 56 fps). If the image stutters, set the maximum frame rate to 45 fps.
-- **Private API.** The virtual screen uses Apple's private `CGVirtualDisplay` API (also used by BetterDisplay and DeskPad). A macOS update could break it. Mirror mode doesn't need it.
+- **Private API.** The virtual screen uses Apple's private `CGVirtualDisplay` API (also used by BetterDisplay and DeskPad). A macOS update could break it.
 - **Some iMac shortcuts stay on the iMac.** Spotlight (⌘Space) and Mission Control shortcuts are handled by the iMac's system before the app sees them. Turn them off on the iMac in System Preferences → Keyboard → Shortcuts if you want them to reach the Mac.
 
 ## Build
@@ -76,7 +76,7 @@ It creates a free self-signed "iMacDisplay Signing" certificate in your keychain
 1. On the Mac, click the menu bar icon and choose the iMac. Can't see the icon? On a MacBook with a notch a full menu bar hides it: open iMacDisplay again from Applications and the same controls show up in a window.
 2. The iMac shows a 6-digit code: type it on the Mac. This happens only once.
 3. Allow the permissions macOS asks for on the Mac: **Screen Recording**, **System Audio Recording**, **Accessibility** (for the iMac keyboard and mouse) and **Local Network**.
-4. In extend mode, arrange the new screen in System Settings → Displays.
+4. Arrange the new screen and choose its resolution in System Settings → Displays, like any monitor.
 
 ## Using a Thunderbolt cable
 
@@ -109,7 +109,7 @@ The stream is **not encrypted** (meant for a trusted home network). Pairing uses
 
 Usa un vecchio iMac (pensato per il 21,5" Retina 4K, fine 2015, con macOS 12 Monterey) come secondo schermo di un Mac con chip Apple, senza hardware aggiuntivo. Gli iMac Retina non hanno mai supportato la Modalità Monitor Esterno, quindi nessun cavo può farli vedere al Mac come un monitor vero: iMacDisplay lo fa via software.
 
-**Cosa fa:** estende o duplica la scrivania; risoluzione Retina fino a 60 fps; qualità adattiva (di default abbassa prima il frame rate, configurabile); luminosità, gamma e temperatura colore dell'iMac regolabili dalla barra dei menu del Mac; audio del Mac solo sull'iMac; tastiera e mouse dell'iMac controllano il Mac (⌃⌥⌘⌫ li restituisce all'iMac); ricerca automatica e codice di abbinamento la prima volta; sceglie da solo il collegamento più veloce tra cavo Thunderbolt, Ethernet e Wi-Fi; si apre al login sull'iMac; interfaccia in italiano e inglese.
+**Cosa fa:** estende la scrivania come un monitor in HDMI (risoluzione e disposizione da Impostazioni di Sistema → Schermi); risoluzione Retina fino a 60 fps; qualità adattiva (di default abbassa prima il frame rate, configurabile); luminosità, gamma e temperatura colore dell'iMac regolabili dalla barra dei menu del Mac; audio del Mac solo sull'iMac; tastiera e mouse dell'iMac controllano il Mac (⌃⌥⌘⌫ li restituisce all'iMac); ricerca automatica e codice di abbinamento la prima volta; sceglie da solo il collegamento più veloce tra cavo Thunderbolt, Ethernet e Wi-Fi; si apre al login sull'iMac; interfaccia in italiano e inglese.
 
 **Limiti:** non è un monitor vero (funziona solo con entrambe le app aperte, niente schermata di avvio o login); l'immagine è compressa; il 4K a 60 Hz è al limite di decodifica dell'iMac (se scatta, imposta 45 fps); lo schermo virtuale usa un'API privata di Apple che un aggiornamento di macOS potrebbe rompere; Spotlight e Mission Control dell'iMac restano all'iMac, a meno di disattivarne le scorciatoie sull'iMac.
 

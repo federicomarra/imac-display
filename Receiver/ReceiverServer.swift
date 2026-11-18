@@ -26,6 +26,9 @@ final class ReceiverServer {
     private var currentPIN: String?
     private var statsTimer: DispatchSourceTimer?
     private var framesReceived = 0
+    private let volume = SystemVolume()
+    /// Last volume both sides agree on, so an echo isn't sent back (queue).
+    private var lastVolume: AudioVolumeMessage?
 
     private let defaults = UserDefaults.standard
 
@@ -65,6 +68,15 @@ final class ReceiverServer {
         videoView.onNeedsKeyframe = { [weak self] in
             self?.queue.async { self?.active?.connection.send(.requestKeyframe) }
         }
+        // Volume keys on the iMac: the Mac's "iMac" audio output follows them.
+        volume.onChange = { [weak self] level in
+            self?.queue.async {
+                guard let self, let active = self.active, !level.matches(self.lastVolume) else { return }
+                self.lastVolume = level
+                active.connection.sendJSON(.audioVolume, level)
+            }
+        }
+        volume.start()
     }
 
     func start() {
@@ -143,6 +155,7 @@ final class ReceiverServer {
             return
         }
         active = nil
+        lastVolume = nil
         stopStatsTimer()
         audio.stop()
         DispatchQueue.main.async { self.videoView.reset() }
@@ -232,8 +245,20 @@ final class ReceiverServer {
         case .audioFormat:
             guard let format = JSONCoding.decode(AudioFormatMessage.self, from: payload) else { return }
             audio.configure(format)
+            // Audio is starting: give the Mac the iMac's current volume to start from.
+            DispatchQueue.main.async {
+                let level = self.volume.level
+                self.queue.async {
+                    self.lastVolume = level
+                    client.connection.sendJSON(.audioVolume, level)
+                }
+            }
         case .audioData:
             audio.enqueue(payload)
+        case .audioVolume:
+            guard let level = JSONCoding.decode(AudioVolumeMessage.self, from: payload) else { return }
+            lastVolume = level
+            DispatchQueue.main.async { self.volume.set(level) }
         case .displayControl:
             guard let control = JSONCoding.decode(DisplayControlMessage.self, from: payload) else { return }
             DispatchQueue.main.async {

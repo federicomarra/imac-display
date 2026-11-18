@@ -20,6 +20,7 @@ enum MessageType: UInt8 {
     case videoFrame = 11        // binary VideoFrame
     case audioFormat = 20       // JSON AudioFormatMessage
     case audioData = 21         // raw Float32 interleaved PCM, little-endian
+    case audioVolume = 22       // JSON AudioVolumeMessage, sent both ways to keep volumes in sync
     case displayControl = 30    // JSON DisplayControlMessage
     case ping = 40              // 8-byte timestamp, echoed back as pong
 
@@ -119,6 +120,20 @@ struct VideoFrame {
 struct AudioFormatMessage: Codable {
     var sampleRate: Double
     var channels: Int
+}
+
+/// Volume and mute of the iMac's speakers: the iMac's system volume on one side, the
+/// "iMac" audio output of the Mac on the other.
+struct AudioVolumeMessage: Codable {
+    /// 0...1
+    var volume: Float
+    var muted: Bool
+
+    /// Equal within rounding, so a value echoed back by the other side isn't sent again.
+    func matches(_ other: AudioVolumeMessage?) -> Bool {
+        guard let other else { return false }
+        return abs(volume - other.volume) < 0.005 && muted == other.muted
+    }
 }
 
 // MARK: - Display adjustments (brightness, gamma, white point)

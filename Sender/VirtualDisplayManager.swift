@@ -12,7 +12,10 @@ final class VirtualDisplayManager {
     }
 
     /// Returns the display ID of the new screen, or nil if macOS refused to create it.
-    func create(name: String, serial: UInt32, preset: ResolutionPreset) -> CGDirectDisplayID? {
+    /// Like any monitor, its resolution is chosen in System Settings → Displays and macOS
+    /// remembers it per iMac (by serial). Only the first time an iMac connects does the
+    /// app pick one: Retina "looks like 2048 × 1152", the iMac's own resolution.
+    func create(name: String, serial: UInt32) -> CGDirectDisplayID? {
         destroy()
 
         let descriptor = CGVirtualDisplayDescriptor()
@@ -33,44 +36,41 @@ final class VirtualDisplayManager {
         let settings = CGVirtualDisplaySettings()
         // With hiDPI on, macOS also offers each mode at half size in Retina ("looks like").
         settings.hiDPI = 1
-        let pixelModes: [(UInt32, UInt32)] = [(4608, 2592), (4096, 2304), (3200, 1800), (2560, 1440), (1920, 1080)]
+        // The iMac's native size first, in case macOS falls back to the first mode.
+        let pixelModes: [(UInt32, UInt32)] = [(4096, 2304), (4608, 2592), (3200, 1800), (2560, 1440), (1920, 1080)]
         settings.modes = pixelModes.map { CGVirtualDisplayMode(width: $0.0, height: $0.1, refreshRate: 60) }
         guard display.apply(settings) else { return nil }
 
         self.display = display
         let id = display.displayID
-        Self.select(preset, on: id)
-        // The mode list is sometimes published a moment later.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { Self.select(preset, on: id) }
+        let seen = UserDefaults.standard.array(forKey: Self.configuredSerialsKey) as? [Int] ?? []
+        if !seen.contains(Int(serial)) {
+            UserDefaults.standard.set(seen + [Int(serial)], forKey: Self.configuredSerialsKey)
+            Self.selectRetina(on: id)
+            // The mode list is sometimes published a moment later.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { Self.selectRetina(on: id) }
+        }
         return id
     }
+
+    /// Serials of the iMacs whose screen already got its first resolution.
+    private static let configuredSerialsKey = "configuredDisplaySerials"
 
     func destroy() {
         // Releasing the object removes the screen.
         display = nil
     }
 
-    static func select(_ preset: ResolutionPreset, on displayID: CGDirectDisplayID) {
+    /// Selects "looks like 2048 × 1152", rendered at 4096 × 2304.
+    private static func selectRetina(on displayID: CGDirectDisplayID) {
         let options = [kCGDisplayShowDuplicateLowResolutionModes as String: true] as CFDictionary
         guard let modes = CGDisplayCopyAllDisplayModes(displayID, options) as? [CGDisplayMode] else { return }
-        let points = preset.pointSize
-        let pixels = preset.pixelSize
-        let exact = modes.first {
-            $0.width == points.width && $0.height == points.height
-                && $0.pixelWidth == pixels.width && $0.pixelHeight == pixels.height
-        }
-        let fallback = modes.first { $0.width == points.width && $0.height == points.height }
-        guard let mode = exact ?? fallback else { return }
+        let exact = modes.first { $0.width == 2048 && $0.height == 1152 && $0.pixelWidth == 4096 && $0.pixelHeight == 2304 }
+        guard let mode = exact ?? modes.first(where: { $0.width == 2048 && $0.height == 1152 }) else { return }
         if let current = CGDisplayCopyDisplayMode(displayID),
            current.width == mode.width, current.height == mode.height, current.pixelWidth == mode.pixelWidth {
             return
         }
         CGDisplaySetDisplayMode(displayID, mode, nil)
-    }
-
-    /// Pixel size of the display's current mode.
-    static func pixelSize(of displayID: CGDirectDisplayID) -> (width: Int, height: Int)? {
-        guard let mode = CGDisplayCopyDisplayMode(displayID) else { return nil }
-        return (mode.pixelWidth, mode.pixelHeight)
     }
 }

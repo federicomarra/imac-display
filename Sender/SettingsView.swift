@@ -7,21 +7,7 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section("Display") {
-                Picker("Mode", selection: $settings.displayMode) {
-                    Text("Extend the desktop (separate screen)").tag(DisplayMode.extend)
-                    Text("Mirror the main screen").tag(DisplayMode.mirror)
-                }
-                // Switch the running stream right away: a mode that only applied on the
-                // next connection left the iMac mirroring after choosing Extend.
-                .onChange(of: settings.displayMode) { controller.restartStream() }
-                Picker("Resolution", selection: $settings.resolutionPreset) {
-                    Text("Retina – looks like 2048 × 1152").tag(ResolutionPreset.retina2048)
-                    Text("More space – looks like 2304 × 1296").tag(ResolutionPreset.retina2304)
-                    Text("Native 4096 × 2304 (1:1, very small text)").tag(ResolutionPreset.native4096)
-                }
-                .disabled(settings.displayMode == .mirror)
-                .onChange(of: settings.resolutionPreset) { controller.applyResolution() }
-                Text("In extend mode you can also change the resolution and arrangement in System Settings → Displays.")
+                Text("The iMac is a separate screen, like a monitor on HDMI: change its resolution and arrangement in System Settings → Displays.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -52,7 +38,25 @@ struct SettingsView: View {
             }
 
             Section("Audio and input") {
-                Toggle("Play the Mac's sound on the iMac only", isOn: $settings.audioEnabled)
+                Toggle("Play the Mac's sound on the iMac", isOn: $settings.audioEnabled)
+                if settings.audioEnabled && AudioOutputDevice.bundledDriverURL != nil {
+                    if controller.audioOutputNeedsInstall {
+                        HStack {
+                            Text("Install the audio output to pick the iMac in Sound settings, with volume and mute, while connected.")
+                            Spacer()
+                            Button("Install Audio Output…") { controller.installAudioOutput() }
+                        }
+                    } else {
+                        Text("While connected, pick the iMac as the output in Sound settings or in the menu bar.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    if let error = controller.audioOutputError {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                }
                 Toggle("Control the Mac with the iMac's keyboard and mouse", isOn: $settings.inputEnabled)
                 if settings.inputEnabled && !controller.accessibilityGranted {
                     HStack {
@@ -78,7 +82,7 @@ struct SettingsView: View {
             if controller.isStreaming {
                 Section {
                     Button("Apply Changes Now") { controller.restartStream() }
-                    Text("Changes to display, quality, audio and input apply to the next connection, or now with this button.")
+                    Text("Changes to quality, audio and input apply to the next connection, or now with this button.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

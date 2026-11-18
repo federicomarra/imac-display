@@ -30,14 +30,7 @@
 
 /* Settings */
 "Display" = "Schermo";
-"Mode" = "Modalità";
-"Extend the desktop (separate screen)" = "Estendi la scrivania (schermo separato)";
-"Mirror the main screen" = "Duplica lo schermo principale";
-"Resolution" = "Risoluzione";
-"Retina – looks like 2048 × 1152" = "Retina – come 2048 × 1152";
-"More space – looks like 2304 × 1296" = "Più spazio – come 2304 × 1296";
-"Native 4096 × 2304 (1:1, very small text)" = "Nativa 4096 × 2304 (1:1, testo molto piccolo)";
-"In extend mode you can also change the resolution and arrangement in System Settings → Displays." = "In modalità estesa puoi cambiare risoluzione e disposizione anche da Impostazioni di Sistema → Monitor.";
+"The iMac is a separate screen, like a monitor on HDMI: change its resolution and arrangement in System Settings → Displays." = "L'iMac è uno schermo separato, come un monitor collegato in HDMI: cambia risoluzione e disposizione in Impostazioni di Sistema → Schermi.";
 "Quality" = "Qualità";
 "When the connection can't keep up" = "Quando la connessione non regge";
 "Lower the frame rate (keeps text sharp)" = "Abbassa il frame rate (testo sempre nitido)";
@@ -49,7 +42,7 @@
 "Video codec" = "Codec video";
 "Automatic" = "Automatico";
 "Audio and input" = "Audio e input";
-"Play the Mac's sound on the iMac only" = "Riproduci l'audio del Mac solo sull'iMac";
+"Play the Mac's sound on the iMac" = "Riproduci l'audio del Mac sull'iMac";
 "Control the Mac with the iMac's keyboard and mouse" = "Controlla il Mac con tastiera e mouse dell'iMac";
 "iMacDisplay needs the Accessibility permission for this." = "Per questo iMacDisplay ha bisogno del permesso di Accessibilità.";
 "Open Settings" = "Apri Impostazioni";
@@ -59,7 +52,7 @@
 "Forget Paired iMacs" = "Dimentica gli iMac abbinati";
 "Connections over a Thunderbolt cable, Ethernet or Wi-Fi are chosen automatically, fastest first." = "Cavo Thunderbolt, Ethernet o Wi-Fi vengono scelti automaticamente, prima il più veloce.";
 "Apply Changes Now" = "Applica ora le modifiche";
-"Changes to display, quality, audio and input apply to the next connection, or now with this button." = "Le modifiche a schermo, qualità, audio e input valgono dalla prossima connessione, oppure subito con questo pulsante.";
+"Changes to quality, audio and input apply to the next connection, or now with this button." = "Le modifiche a qualità, audio e input valgono dalla prossima connessione, oppure subito con questo pulsante.";
 
 /* Errors */
 "Could not reach the iMac." = "Impossibile raggiungere l'iMac.";
@@ -71,3 +64,10 @@
 "The screen to capture was not found. Check the Screen Recording permission in System Settings → Privacy & Security." = "Schermo da catturare non trovato. Controlla il permesso Registrazione schermo in Impostazioni di Sistema → Privacy e sicurezza.";
 "The hardware video encoder could not be started (error %d)." = "Impossibile avviare il codificatore video hardware (errore %d).";
 "System audio could not be captured (%@, error %d). Check “System Audio Recording” in System Settings → Privacy & Security." = "Impossibile catturare l'audio di sistema (%1$@, errore %2$d). Controlla “Registrazione audio di sistema” in Impostazioni di Sistema → Privacy e sicurezza.";
+
+/* Audio output (driver) */
+"Install the audio output to pick the iMac in Sound settings, with volume and mute, while connected." = "Installa l'uscita audio per scegliere l'iMac nelle impostazioni Suono, con volume e muto, mentre sei collegato.";
+"Install Audio Output…" = "Installa uscita audio…";
+"While connected, pick the iMac as the output in Sound settings or in the menu bar." = "Quando sei collegato, scegli l'iMac come uscita nelle impostazioni Suono o nella barra dei menu.";
+"This build of iMacDisplay doesn't include the audio driver. Build it with scripts/make-dmg.sh." = "Questa versione di iMacDisplay non contiene il driver audio. Creala con scripts/make-dmg.sh.";
+"The audio driver could not be installed." = "Impossibile installare il driver audio.";

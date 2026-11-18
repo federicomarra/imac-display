@@ -1,45 +1,11 @@
 import Foundation
 
-enum DisplayMode: String, CaseIterable, Identifiable {
-    case extend
-    case mirror
-    var id: String { rawValue }
-}
-
 /// What to give up first when the link can't carry full quality.
 enum QualityPolicy: String, CaseIterable, Identifiable {
     case reduceFrameRate
     case reduceResolution
     case reduceQuality
     var id: String { rawValue }
-}
-
-/// Resolution of the virtual display in extend mode.
-enum ResolutionPreset: String, CaseIterable, Identifiable {
-    /// Looks like 2048 x 1152, rendered at 4096 x 2304 (same as the iMac's default).
-    case retina2048
-    /// Looks like 2304 x 1296, rendered at 4608 x 2592 and scaled to the iMac.
-    case retina2304
-    /// 4096 x 2304 at 1:1.
-    case native4096
-
-    var id: String { rawValue }
-
-    var pointSize: (width: Int, height: Int) {
-        switch self {
-        case .retina2048: return (2048, 1152)
-        case .retina2304: return (2304, 1296)
-        case .native4096: return (4096, 2304)
-        }
-    }
-
-    var pixelSize: (width: Int, height: Int) {
-        switch self {
-        case .retina2048: return (4096, 2304)
-        case .retina2304: return (4608, 2592)
-        case .native4096: return (4096, 2304)
-        }
-    }
 }
 
 enum CodecPreference: String, CaseIterable, Identifiable {
@@ -55,8 +21,6 @@ final class SenderSettings: ObservableObject {
 
     private let defaults = UserDefaults.standard
 
-    @Published var displayMode: DisplayMode { didSet { defaults.set(displayMode.rawValue, forKey: Keys.displayMode) } }
-    @Published var resolutionPreset: ResolutionPreset { didSet { defaults.set(resolutionPreset.rawValue, forKey: Keys.resolutionPreset) } }
     @Published var qualityPolicy: QualityPolicy { didSet { defaults.set(qualityPolicy.rawValue, forKey: Keys.qualityPolicy) } }
     @Published var maxFrameRate: Int { didSet { defaults.set(maxFrameRate, forKey: Keys.maxFrameRate) } }
     @Published var maxBitrateMbps: Double { didSet { defaults.set(maxBitrateMbps, forKey: Keys.maxBitrateMbps) } }
@@ -74,8 +38,6 @@ final class SenderSettings: ObservableObject {
     let senderID: String
 
     private enum Keys {
-        static let displayMode = "displayMode"
-        static let resolutionPreset = "resolutionPreset"
         static let qualityPolicy = "qualityPolicy"
         static let maxFrameRate = "maxFrameRate"
         static let maxBitrateMbps = "maxBitrateMbps"
@@ -89,8 +51,6 @@ final class SenderSettings: ObservableObject {
 
     private init() {
         let d = UserDefaults.standard
-        displayMode = DisplayMode(rawValue: d.string(forKey: Keys.displayMode) ?? "") ?? .extend
-        resolutionPreset = ResolutionPreset(rawValue: d.string(forKey: Keys.resolutionPreset) ?? "") ?? .retina2048
         qualityPolicy = QualityPolicy(rawValue: d.string(forKey: Keys.qualityPolicy) ?? "") ?? .reduceFrameRate
         let storedFPS = d.integer(forKey: Keys.maxFrameRate)
         maxFrameRate = [30, 45, 60].contains(storedFPS) ? storedFPS : 60

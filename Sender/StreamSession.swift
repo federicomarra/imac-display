@@ -1,3 +1,4 @@
+import CoreAudio
 import CoreGraphics
 import CoreMedia
 import CoreVideo
@@ -5,8 +6,6 @@ import Foundation
 
 /// A snapshot of the settings used for one stream.
 struct StreamConfig {
-    var mode: DisplayMode
-    var preset: ResolutionPreset
     var policy: QualityPolicy
     var maxFrameRate: Int
     var maxBitrate: Int
@@ -67,6 +66,12 @@ final class StreamSession {
     private var audioWarning: String?
     private let clockStart = Date()
 
+    /// The iMac audio output of the Mac, when the audio driver is installed.
+    private var outputDevice: AudioObjectID?
+    private var stopObservingVolume: (() -> Void)?
+    /// Last volume both sides agree on, so an echo isn't sent back (controlQueue).
+    private var lastVolume: AudioVolumeMessage?
+
     init(connection: FramedConnection, reply: HelloReply, config: StreamConfig) {
         self.connection = connection
         self.reply = reply
@@ -79,29 +84,18 @@ final class StreamSession {
     func start() async throws {
         codec = chooseCodec()
 
-        let displayID: CGDirectDisplayID
-        switch config.mode {
-        case .extend:
-            let serial = UInt32(truncatingIfNeeded: reply.receiverID.hashValueStable)
-            let created = await MainActorRunner.run {
-                self.virtualDisplay.create(name: self.config.receiverName, serial: serial, preset: self.config.preset)
-            }
-            guard let created else {
-                throw NSError(domain: "iMacDisplay", code: 1, userInfo: [
-                    NSLocalizedDescriptionKey: NSLocalizedString("macOS did not allow creating the virtual screen.", comment: "Stream error"),
-                ])
-            }
-            displayID = created
-            baseSize = Self.even(width: reply.screenPixelWidth, height: reply.screenPixelHeight)
-        case .mirror:
-            displayID = CGMainDisplayID()
-            let source = VirtualDisplayManager.pixelSize(of: displayID)
-                ?? (width: reply.screenPixelWidth, height: reply.screenPixelHeight)
-            let scale = min(Double(reply.screenPixelWidth) / Double(source.width),
-                            Double(reply.screenPixelHeight) / Double(source.height),
-                            1)
-            baseSize = Self.even(width: Int(Double(source.width) * scale), height: Int(Double(source.height) * scale))
+        // The iMac is always a separate screen, like a monitor on HDMI: mirroring, if
+        // wanted, is chosen in System Settings → Displays like for any monitor.
+        let serial = UInt32(truncatingIfNeeded: reply.receiverID.hashValueStable)
+        let created = await MainActorRunner.run {
+            self.virtualDisplay.create(name: self.config.receiverName, serial: serial)
         }
+        guard let displayID = created else {
+            throw NSError(domain: "iMacDisplay", code: 1, userInfo: [
+                NSLocalizedDescriptionKey: NSLocalizedString("macOS did not allow creating the virtual screen.", comment: "Stream error"),
+            ])
+        }
+        baseSize = Self.even(width: reply.screenPixelWidth, height: reply.screenPixelHeight)
 
         currentSize = scaled(baseSize, by: adaptive.scale)
         try makeEncoder(size: currentSize)
@@ -114,11 +108,20 @@ final class StreamSession {
         }
         try await capturer.start(displayID: displayID, width: currentSize.width, height: currentSize.height, fps: adaptive.frameRate)
 
+        // With the audio driver the iMac is an audio output of the Mac while connected
+        // (SenderController removes it on disconnect, so a restart doesn't lose it).
+        let device = AudioOutputDevice.publish(config.audio ? config.receiverName : nil)
         if config.audio {
+            if let device {
+                outputDevice = device
+                stopObservingVolume = AudioOutputDevice.observe(device, queue: controlQueue) { [weak self] in
+                    self?.outputVolumeChanged()
+                }
+            }
             audio.onFormat = { [weak self] format in self?.connection.sendJSON(.audioFormat, format) }
             audio.onSamples = { [weak self] samples in self?.connection.send(.audioData, samples) }
             do {
-                try audio.start()
+                try audio.start(deviceUID: device == nil ? nil : AudioOutputDevice.deviceUID)
             } catch {
                 audioWarning = error.localizedDescription
             }
@@ -143,6 +146,8 @@ final class StreamSession {
 
         timer?.cancel()
         timer = nil
+        stopObservingVolume?()
+        stopObservingVolume = nil
         audio.stop()
         injector.releaseAll()
         encoder?.invalidate()
@@ -154,13 +159,6 @@ final class StreamSession {
         }
     }
 
-    /// Switches the virtual screen to another resolution while streaming, like System
-    /// Settings → Displays does: windows stay on the iMac. Call on the main thread.
-    func setResolution(_ preset: ResolutionPreset) {
-        guard config.mode == .extend, let displayID = virtualDisplay.displayID else { return }
-        VirtualDisplayManager.select(preset, on: displayID)
-    }
-
     /// Messages from the receiver that belong to the stream (called on the network queue).
     func handle(_ type: MessageType, _ payload: Data) {
         switch type {
@@ -169,6 +167,14 @@ final class StreamSession {
             injector.handle(event)
         case .requestKeyframe:
             forceKeyframe()
+        case .audioVolume:
+            // The iMac's volume changed (or this is its value at connection): mirror it.
+            guard let level = JSONCoding.decode(AudioVolumeMessage.self, from: payload) else { return }
+            controlQueue.async {
+                guard let device = self.outputDevice else { return }
+                self.lastVolume = level
+                AudioOutputDevice.setLevel(level, on: device)
+            }
         case .pong:
             var reader = BinaryReader(payload)
             if let sent = reader.read(Int64.self) {
@@ -178,6 +184,16 @@ final class StreamSession {
         default:
             break
         }
+    }
+
+    /// Volume or mute of the iMac output changed on the Mac (keys, menu bar): tell the iMac.
+    /// Called on controlQueue.
+    private func outputVolumeChanged() {
+        guard let device = outputDevice else { return }
+        let level = AudioOutputDevice.level(of: device)
+        guard !level.matches(lastVolume) else { return }
+        lastVolume = level
+        connection.sendJSON(.audioVolume, level)
     }
 
     // MARK: - Video

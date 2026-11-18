@@ -19,15 +19,25 @@ xcodebuild -project iMacDisplay.xcodeproj \
   ${overrides[@]+"${overrides[@]}"} \
   build
 
+# Audio output driver (AudioDriver/), shipped inside the Mac app, which installs it
+# into /Library/Audio/Plug-Ins/HAL from its Settings.
+driver="build/Release/iMacDisplay.app/Contents/Resources/iMacDisplay Audio.driver"
+mkdir -p "$driver/Contents/MacOS"
+cp AudioDriver/Info.plist "$driver/Contents/"
+clang -bundle -arch arm64 -arch x86_64 -mmacosx-version-min=14.2 -O2 -Wall \
+  -framework CoreFoundation -o "$driver/Contents/MacOS/iMacDisplayAudio" AudioDriver/iMacDisplayAudio.c
+
 # Sign with the stable certificate from scripts/make-signing-cert.sh, so macOS
 # keeps the apps' permissions across versions. Without it they stay ad-hoc
 # signed and every update asks for Screen Recording, Accessibility… again.
+# The driver is signed first: adding it changed the app, so the app is re-signed too.
 identity="iMacDisplay Signing"
-if security find-certificate -c "$identity" >/dev/null 2>&1; then
-  codesign --force --sign "$identity" build/Release/iMacDisplay.app "build/Release/iMacDisplay Receiver.app"
-else
+if ! security find-certificate -c "$identity" >/dev/null 2>&1; then
   echo "warning: no '$identity' certificate in the keychain, apps are ad-hoc signed" >&2
+  identity="-"
 fi
+codesign --force --sign "$identity" "$driver"
+codesign --force --sign "$identity" build/Release/iMacDisplay.app "build/Release/iMacDisplay Receiver.app"
 
 mkdir -p dist/dmg
 ditto build/Release/iMacDisplay.app "dist/dmg/iMacDisplay.app"

@@ -13,9 +13,10 @@ enum AudioCaptureError: LocalizedError {
     }
 }
 
-/// Captures everything the Mac plays through a Core Audio process tap (macOS 14.2+).
-/// The tap is created with `.mutedWhenTapped`, so while streaming the sound comes
-/// out of the iMac only and the Mac's own speakers stay silent.
+/// Captures the Mac's sound through a Core Audio process tap (macOS 14.2+).
+/// With a `deviceUID` (the iMac audio output) it captures only what apps play to that
+/// output, so the sound reaches the iMac when the user picks it, like HDMI speakers.
+/// Without one it captures everything, muted on the Mac, so the iMac plays it alone.
 final class SystemAudioCapturer {
     /// Called on the audio queue with interleaved Float32 samples.
     var onFormat: ((AudioFormatMessage) -> Void)?
@@ -26,19 +27,25 @@ final class SystemAudioCapturer {
     private var procID: AudioDeviceIOProcID?
     private let queue = DispatchQueue(label: "imacdisplay.sender.audio", qos: .userInteractive)
 
-    func start() throws {
+    func start(deviceUID: String? = nil) throws {
         stop()
 
-        let description = CATapDescription(stereoGlobalTapButExcludeProcesses: [])
+        let description: CATapDescription
+        if let deviceUID {
+            description = CATapDescription(__excludingProcesses: [], andDeviceUID: deviceUID, withStream: 0)
+            description.muteBehavior = .unmuted
+        } else {
+            description = CATapDescription(stereoGlobalTapButExcludeProcesses: [])
+            description.muteBehavior = .mutedWhenTapped
+        }
         description.uuid = UUID()
         description.name = "iMacDisplay"
         description.isPrivate = true
-        description.muteBehavior = .mutedWhenTapped
 
         var status = AudioHardwareCreateProcessTap(description, &tapID)
         guard status == noErr else { throw AudioCaptureError.failed("tap", status) }
 
-        let outputUID = try Self.defaultOutputDeviceUID()
+        let outputUID = try deviceUID ?? Self.defaultOutputDeviceUID()
         let aggregateDescription: [String: Any] = [
             kAudioAggregateDeviceNameKey: "iMacDisplay Tap",
             kAudioAggregateDeviceUIDKey: UUID().uuidString,
