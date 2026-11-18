@@ -6,14 +6,45 @@ on:
   pull_request:
 
 jobs:
+  # ── Detect which apps are affected by the changed files ─────────────────────
+  changes:
+    name: "changes"
+    runs-on: ubuntu-latest
+    outputs:
+      # JSON array of the filter names below that matched, e.g. ["iMacDisplay"]
+      targets: ${{ steps.filter.outputs.changes }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          # Filter names are the Xcode target names, so they feed the matrix as-is.
+          filters: |
+            iMacDisplay:
+              - "Sender/**"
+              - "Shared/**"
+              - "Config/Sender-*"
+              - "iMacDisplay.xcodeproj/**"
+              - ".github/workflows/build.yml"
+            iMacDisplay Receiver:
+              - "Receiver/**"
+              - "Shared/**"
+              - "Config/Receiver-*"
+              - "iMacDisplay.xcodeproj/**"
+              - ".github/workflows/build.yml"
+
+  # ── Build only the affected apps ────────────────────────────────────────────
   build:
+    needs: changes
+    if: needs.changes.outputs.targets != '[]'
     runs-on: macos-15
     strategy:
       fail-fast: false
       matrix:
-        target: ["iMacDisplay", "iMacDisplay Receiver"]
+        target: ${{ fromJSON(needs.changes.outputs.targets) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Show Xcode version
         run: xcodebuild -version
       - name: Build ${{ matrix.target }}
