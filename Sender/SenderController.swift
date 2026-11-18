@@ -115,6 +115,11 @@ final class SenderController: ObservableObject {
         }
     }
 
+    /// Applies the resolution setting to the running stream without restarting it.
+    func applyResolution() {
+        session?.setResolution(settings.resolutionPreset)
+    }
+
     private func connected(_ nwConnection: NWConnection?, to receiver: DiscoveredReceiver) {
         guard target?.id == receiver.id, case .connecting = state else {
             nwConnection?.cancel()

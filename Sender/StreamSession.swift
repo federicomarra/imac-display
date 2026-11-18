@@ -154,6 +154,13 @@ final class StreamSession {
         }
     }
 
+    /// Switches the virtual screen to another resolution while streaming, like System
+    /// Settings → Displays does: windows stay on the iMac. Call on the main thread.
+    func setResolution(_ preset: ResolutionPreset) {
+        guard config.mode == .extend, let displayID = virtualDisplay.displayID else { return }
+        VirtualDisplayManager.select(preset, on: displayID)
+    }
+
     /// Messages from the receiver that belong to the stream (called on the network queue).
     func handle(_ type: MessageType, _ payload: Data) {
         switch type {

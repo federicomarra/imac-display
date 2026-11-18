@@ -11,12 +11,16 @@ struct SettingsView: View {
                     Text("Extend the desktop (separate screen)").tag(DisplayMode.extend)
                     Text("Mirror the main screen").tag(DisplayMode.mirror)
                 }
+                // Switch the running stream right away: a mode that only applied on the
+                // next connection left the iMac mirroring after choosing Extend.
+                .onChange(of: settings.displayMode) { controller.restartStream() }
                 Picker("Resolution", selection: $settings.resolutionPreset) {
                     Text("Retina – looks like 2048 × 1152").tag(ResolutionPreset.retina2048)
                     Text("More space – looks like 2304 × 1296").tag(ResolutionPreset.retina2304)
                     Text("Native 4096 × 2304 (1:1, very small text)").tag(ResolutionPreset.native4096)
                 }
                 .disabled(settings.displayMode == .mirror)
+                .onChange(of: settings.resolutionPreset) { controller.applyResolution() }
                 Text("In extend mode you can also change the resolution and arrangement in System Settings → Displays.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
