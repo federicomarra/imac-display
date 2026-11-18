@@ -48,12 +48,19 @@ Both computers must be on the same network, or connected with a Thunderbolt cabl
 Or from Terminal:
 
 ```sh
-xcodebuild -project iMacDisplay.xcodeproj -target "iMacDisplay Receiver" -configuration Release build
-xcodebuild -project iMacDisplay.xcodeproj -target iMacDisplay -configuration Release build
-# The apps end up in build/Release/
+scripts/make-dmg.sh
+# Both apps end up in build/Release/, packed together in dist/iMacDisplay.dmg
 ```
 
-The apps are signed "to run locally" (no Apple developer account needed). macOS asks for the Screen Recording permission again after every rebuild.
+Apps built on your own Mac aren't quarantined, so Gatekeeper never blocks them.
+
+No Apple developer account is needed. macOS ties permissions (Screen Recording, Accessibility…) to the app's signature, so by default it asks for them again after every rebuild or update. To keep them, run once:
+
+```sh
+scripts/make-signing-cert.sh
+```
+
+It creates a free self-signed "iMacDisplay Signing" certificate in your keychain, which `make-dmg.sh` then signs with. If the GitHub CLI (`gh`) is logged in, it also stores the certificate in the repo secrets `SIGNING_P12` / `SIGNING_P12_PASSWORD`, so the Release builds use it too. Grant the permissions one last time after the first signed build.
 
 ## Install on the iMac
 
@@ -66,7 +73,7 @@ The apps are signed "to run locally" (no Apple developer account needed). macOS 
 
 ## First connection
 
-1. On the Mac, click the menu bar icon and choose the iMac.
+1. On the Mac, click the menu bar icon and choose the iMac. Can't see the icon? On a MacBook with a notch a full menu bar hides it: open iMacDisplay again from Applications and the same controls show up in a window.
 2. The iMac shows a 6-digit code: type it on the Mac. This happens only once.
 3. Allow the permissions macOS asks for on the Mac: **Screen Recording**, **System Audio Recording**, **Accessibility** (for the iMac keyboard and mouse) and **Local Network**.
 4. In extend mode, arrange the new screen in System Settings → Displays.
@@ -106,9 +113,9 @@ Usa un vecchio iMac (pensato per il 21,5" Retina 4K, fine 2015, con macOS 12 Mon
 
 **Limiti:** non è un monitor vero (funziona solo con entrambe le app aperte, niente schermata di avvio o login); l'immagine è compressa; il 4K a 60 Hz è al limite di decodifica dell'iMac (se scatta, imposta 45 fps); lo schermo virtuale usa un'API privata di Apple che un aggiornamento di macOS potrebbe rompere; Spotlight e Mission Control dell'iMac restano all'iMac, a meno di disattivarne le scorciatoie sull'iMac.
 
-**Compilazione:** apri `iMacDisplay.xcodeproj` in Xcode 16+. Schema **iMacDisplay** → *Run* per il Mac. Schema **iMacDisplay Receiver** → *Build*, poi copia `iMacDisplay Receiver.app` sull'iMac (è universale, gira anche su Intel). Al primo avvio sull'iMac: clic destro → *Apri*, oppure `xattr -dr com.apple.quarantine "/Applications/iMacDisplay Receiver.app"`.
+**Compilazione:** apri `iMacDisplay.xcodeproj` in Xcode 16+. Schema **iMacDisplay** → *Run* per il Mac. Schema **iMacDisplay Receiver** → *Build*, poi copia `iMacDisplay Receiver.app` sull'iMac (è universale, gira anche su Intel). Oppure da Terminale `scripts/make-dmg.sh` crea entrambe le app in `build/Release/` e il DMG in `dist/iMacDisplay.dmg`. Per non dover ridare i permessi (Registrazione schermo, Accessibilità…) a ogni aggiornamento, esegui una volta `scripts/make-signing-cert.sh`: crea un certificato gratuito "iMacDisplay Signing" nel portachiavi e, se `gh` è collegato, lo salva nei secret del repo per le Release. Al primo avvio sull'iMac: clic destro → *Apri*, oppure `xattr -dr com.apple.quarantine "/Applications/iMacDisplay Receiver.app"`.
 
-**Primo collegamento:** dal menu del Mac scegli l'iMac, inserisci il codice di 6 cifre che compare sull'iMac e concedi i permessi Registrazione schermo, Registrazione audio di sistema, Accessibilità e Rete locale.
+**Primo collegamento:** dal menu del Mac scegli l'iMac (se l'icona non si vede perché la barra dei menu è piena, riapri iMacDisplay da Applicazioni: gli stessi comandi compaiono in una finestra), inserisci il codice di 6 cifre che compare sull'iMac e concedi i permessi Registrazione schermo, Registrazione audio di sistema, Accessibilità e Rete locale.
 
 **Cavo Thunderbolt:** servono l'adattatore Apple da Thunderbolt 3 (USB-C) a Thunderbolt 2 e un cavo Thunderbolt 2 (non Mini DisplayPort). macOS crea da solo la rete "Bridge Thunderbolt" e l'app la preferisce automaticamente.
 
