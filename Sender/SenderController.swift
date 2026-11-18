@@ -28,6 +28,7 @@ final class SenderController: ObservableObject {
     let settings = SenderSettings.shared
 
     private let browser = ReceiverBrowser()
+    private let brightnessKeys = BrightnessKeys()
     private let networkQueue = DispatchQueue(label: "imacdisplay.sender.net", qos: .userInteractive)
     private var connection: FramedConnection?
     private var target: DiscoveredReceiver?
@@ -53,11 +54,19 @@ final class SenderController: ObservableObject {
             self?.autoConnectIfNeeded()
         }
         browser.start()
+        brightnessKeys.iMacDisplay = { [weak self] in
+            guard let self, self.isStreaming, self.displayState?.brightnessSupported == true else { return nil }
+            return self.session?.displayID
+        }
+        brightnessKeys.onKey = { [weak self] up, fine in self?.stepBrightness(up: up, fine: fine) }
+        brightnessKeys.start()
         permissionTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
             let granted = InputInjector.isTrusted(prompt: false)
             if self?.accessibilityGranted != granted {
                 self?.accessibilityGranted = granted
             }
+            // The brightness keys need Accessibility too: start once it's granted.
+            if granted { self?.brightnessKeys.start() }
         }
     }
 
@@ -292,6 +301,16 @@ final class SenderController: ObservableObject {
         pendingControl.gamma = value
         displayState?.gamma = value
         sendControlSoon()
+    }
+
+    /// A brightness key pressed for the iMac: one macOS step (1/16, or 1/64 with ⌥⇧),
+    /// with the system's brightness indicator on the iMac's screen.
+    private func stepBrightness(up: Bool, fine: Bool) {
+        guard let state = displayState, let display = session?.displayID else { return }
+        let step: Float = fine ? 1.0 / 64 : 1.0 / 16
+        let value = min(max(((state.brightness / step).rounded() + (up ? 1 : -1)) * step, 0), 1)
+        setBrightness(value)
+        BrightnessIndicator.show(value, on: display)
     }
 
     func setWarmth(_ value: Float) {

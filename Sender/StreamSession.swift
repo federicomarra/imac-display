@@ -159,6 +159,11 @@ final class StreamSession {
         }
     }
 
+    /// The iMac's screen on the Mac, while it exists. Read on the main thread.
+    var displayID: CGDirectDisplayID? {
+        virtualDisplay.displayID
+    }
+
     /// Messages from the receiver that belong to the stream (called on the network queue).
     func handle(_ type: MessageType, _ payload: Data) {
         switch type {
