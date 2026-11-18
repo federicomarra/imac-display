@@ -1,0 +1,108 @@
+name: Release
+
+# Every push to main (and manual runs) bump the version by +0.1, build both
+# apps (ad-hoc signed, universal) and publish a .dmg as both a GitHub Release
+# and a workflow artifact. The version is derived from the latest git tag
+# (no tags => 1.0); CI never commits back to the repo, it only pushes the tag
+# and the Release.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write # push the version tag and create the Release
+
+concurrency:
+  group: release-main # serialize runs so two releases can't race
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: macos-15
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # full history + tags, so release notes can list commits
+
+      - name: Compute next version
+        run: |
+          latest=$(git tag --list 'v*' --sort=-version:refname | head -n1)
+          if [ -n "$latest" ]; then
+            new=$(awk -v v="${latest#v}" 'BEGIN{printf "%.1f", v + 0.1}')   # v1.9 -> 2.0
+          else
+            new=1.0                                                          # first release
+          fi
+          echo "VERSION=$new"       >> "$GITHUB_ENV"
+          echo "LATEST_TAG=$latest" >> "$GITHUB_ENV"   # reused as the changelog base
+          echo "Building version $new (from tag '${latest:-none}')"
+
+      - name: Build apps
+        run: |
+          # Info.plists read $(MARKETING_VERSION)/$(CURRENT_PROJECT_VERSION),
+          # so overriding the build settings stamps the version, no file edits.
+          xcodebuild \
+            -project iMacDisplay.xcodeproj \
+            -target iMacDisplay \
+            -target "iMacDisplay Receiver" \
+            -configuration Release \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            build
+
+      - name: Make DMG
+        run: |
+          mkdir -p dmg dist
+          cp -R build/Release/*.app dmg/
+          ln -s /Applications dmg/Applications
+          hdiutil create -volname "iMacDisplay $VERSION" -srcfolder dmg \
+            -ov -format UDZO dist/iMacDisplay.dmg
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: iMacDisplay-${{ env.VERSION }}
+          path: dist/iMacDisplay.dmg
+          if-no-files-found: error
+
+      - name: Tag and publish Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Annotated tag under my identity, so the tagger is me, not github-actions.
+          git config user.name  "Federico Marra"
+          git config user.email "fecrom@gmail.com"
+          git tag -a "v$VERSION" -m "iMacDisplay v$VERSION"
+          git push origin "v$VERSION"
+
+          range="${LATEST_TAG:+$LATEST_TAG..HEAD}"
+
+          {
+            echo "## Novità in questa versione / What's changed"
+            echo ""
+            git log ${range:+"$range"} --no-merges --pretty=format:'- %s' \
+              | grep -v '\[skip ci\]' || echo "- Prima versione."
+            echo ""
+            echo ""
+            # Quoted heredoc: backticks below stay literal Markdown.
+            cat <<'EOF'
+          ---
+          ## Installazione / Installation
+
+          **🇮🇹 Italiano:**
+          1. Sul **Mac**: trascina **iMacDisplay.app** nella cartella **Applicazioni**.
+          2. Sull'**iMac**: copia **iMacDisplay Receiver.app** nella cartella **Applicazioni**.
+          3. Le app sono firmate ad-hoc: al **primo avvio** fai **clic destro** (o `Ctrl` + clic) sull'app e scegli **Apri**. Se macOS la blocca, vai in **Impostazioni di Sistema → Privacy e sicurezza** e clicca **Apri comunque**.
+
+          **🇬🇧 English:**
+          1. On the **Mac**: drag **iMacDisplay.app** into **Applications**.
+          2. On the **iMac**: copy **iMacDisplay Receiver.app** into **Applications**.
+          3. The apps are ad-hoc signed: on **first launch** **right-click** (or `Ctrl` + click) the app and choose **Open**. If macOS blocks it, go to **System Settings → Privacy & Security** and click **Open Anyway**.
+          EOF
+          } > release-notes.md
+
+          gh release create "v$VERSION" dist/iMacDisplay.dmg \
+            --title "iMacDisplay v$VERSION" \
+            --notes-file release-notes.md
